@@ -2,6 +2,12 @@
 SSHLess with AWS SSM
 ====================
 
+.. image:: https://circleci.com/gh/giuliocalzolari/sshless/tree/master.svg?style=svg
+    :target: https://circleci.com/gh/giuliocalzolari/sshless/tree/master
+
+.. image:: https://badge.fury.io/py/sshless.png
+    :target: https://badge.fury.io/py/sshless
+    
 Config
 ------
 

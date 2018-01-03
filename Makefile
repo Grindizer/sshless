@@ -24,6 +24,10 @@ dist: clean
 
 pip: dist
 	twine upload dist/*
+	rm -fr build/
+	rm -fr dist/
+	rm -fr .eggs/
+	rm -rf sshless.egg-info/	
 
 install: clean
 	python setup.py install
