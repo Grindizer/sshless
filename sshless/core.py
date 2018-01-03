@@ -107,3 +107,4 @@ class SSHLess(object):
         return 'https://console.aws.amazon.com/ec2/v2/home?region=' + \
             self.cfg["region"] + '#Commands:CommandId=' + \
             str(CommandId) + ';sort=CommandId'
+  

@@ -27,3 +27,10 @@ pip: dist
 
 install: clean
 	python setup.py install
+
+local: clean
+	python setup.py install
+	rm -fr build/
+	rm -fr dist/
+	rm -fr .eggs/
+	rm -rf sshless.egg-info/
