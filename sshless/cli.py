@@ -75,9 +75,6 @@ def cli(ctx, iam, region, verbose):
 
 
 
-
-
-
 @cli.command()
 @click.option('-f', '--filters', default="PingStatus=Online", help='advanced Filter default: PingStatus=Online')
 @click.option('-t', '--show-tags', is_flag=True, default=False)
@@ -91,7 +88,6 @@ def list(ctx, filters, show_tags):
         key, val = ff.split("=")
         fl.append({"Key": key, "Values": [val] })
 
-
     try:
         response = sshless.ssm.describe_instance_information(
             Filters=fl
@@ -99,7 +95,6 @@ def list(ctx, filters, show_tags):
     except:
         click.echo("[{}] {}".format(colored("ERROR", "red"), sys.exc_info()[1] ))
         sys.exit(1)
-
 
 
     if show_tags:
@@ -132,18 +127,18 @@ def list(ctx, filters, show_tags):
 @cli.command()
 @click.argument('command')
 @click.option('-s', '--show-stats', is_flag=True, default=False)
-@click.option('-n', '--name', default=os.environ.get("SHHLESS_NAME_FILTER", None), help='Filter based on tag:Name')
-@click.option('-f', '--filters', default=os.environ.get("SHHLESS_FILTER", None), help='advanced Filter')
-@click.option('-i', '--instances', default=os.environ.get("SHHLESS_ID_FILTER", None), help='instances ID')
-@click.option('--maxconcurrency', default=None, help='MaxConcurrency')
-@click.option('--maxerrors', default=1, help='MaxErrors')
+@click.option('-n', '--name', default=os.environ.get("SSHLESS_NAME_FILTER", None), help='Filter based on tag:Name')
+@click.option('-f', '--filters', default=os.environ.get("SSHLESS_FILTER", None), help='advanced Filter')
+@click.option('-i', '--instances', default=os.environ.get("SSHLESS_ID_FILTER", None), help='instances ID')
+@click.option('--maxconcurrency', default=None, help='Max concurrency allowed (Optional)')
+@click.option('--maxerrors', default=1, help='Max errors allowed (default: 1)')
 @click.option('--comment', default='sshless cli', help='Command invocation comment')
 @click.option('--interval', default=1, help='Check interval (default: 1.0s)')
-@click.option('--s3-output', default=os.environ.get("SHHLESS_S3_OUTPUT", None), help='s3 output')
-@click.option('--preserve-s3-output', is_flag=True, default=False)
+@click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
+@click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
 def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, s3_output, preserve_s3_output):
-    """Send SSM AWS-RunShellScript to target, quick emulation of virtual SSH interface"""
+    """SSM AWS-RunShellScript emulation SSH interface"""
 
     sshless = SSHLess(ctx.obj)
 
@@ -184,7 +179,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
     if s3_output:
         params["OutputS3BucketName"] = s3_output
 
-    logger.debug("Send command with parameters:")
+    logger.info("Send command")
     logger.debug(json.dumps(params, indent=2, default=json_serial))
     try:
         cmd = sshless.ssm.send_command(**params)['Command']
@@ -199,7 +194,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         time.sleep(interval)
         out = sshless.list_commands(CommandId=cmd['CommandId'])[0]
         if out["TargetCount"] == 0:
-            click.echo(colored("TargetCount: 0 ", "red"))
+            click.echo(colored("TargetCount: 0", "red"))
             break
         # Print final results when done
         # click.echo(json.dumps(out, indent=2, default=json_serial))
@@ -216,43 +211,14 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
                 res = sshless.list_command_invocations(
                     cmd['CommandId'], Details=True)
                 if len(res) != 0:
-                    click.echo()
 
                     if s3_output:
                         # click.echo(cmd['CommandId'])
-                        s3 = sshless.get_client("s3")
-
-                        # Create a paginator to pull 1000 objects at a time
-                        paginator = s3.get_paginator('list_objects')
-                        operation_parameters = {'Bucket': s3_output,
-                                                'Prefix': '{}/'.format(cmd['CommandId'])}
-                        pageresponse = paginator.paginate(**operation_parameters)
-                        logger.debug("List s3 output")
-                        logger.debug(operation_parameters)
-                        # PageResponse Holds 1000 objects at a time and will continue to repeat in chunks of 1000.
-                        for pageobject in pageresponse:
-                            for obj in pageobject["Contents"]:
-
-                                if obj["Key"].endswith("stdout"):
-                                     status = get_status("Success")
-                                elif obj["Key"].endswith("stderr"):
-                                    status = get_status("Error")
-                                else:
-                                    logger.warn("Unknown s3 obejct: {}".format(obj["Key"]))
-                                    continue
-
-                                output = obj["Key"].split("/")
-                                click.echo("[{}] {}".format(status, output[1]))
-                                # GET s3 output
-                                objout = s3.get_object(Bucket=s3_output, Key=obj["Key"])
-                                click.echo(objout['Body'].read().decode('utf-8'))
-
-                                if preserve_s3_output == False:
-                                    logger.debug("deleting s3 : {}".format(obj["Key"]))
-                                    s3.delete_object(
-                                        Bucket=s3_output,
-                                        Key=obj["Key"]
-                                    )
+                        status, instanceid, key, body = sshless.get_s3_output(cmd, s3_output)
+                        click.echo("[{}] {}".format(get_status(status), instanceid))
+                        click.echo(body)
+                        if preserve_s3_output == False:
+                            sshless.delete_s3_output(key, s3_output)
 
 
                     else:

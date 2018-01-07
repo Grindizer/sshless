@@ -107,4 +107,41 @@ class SSHLess(object):
         return 'https://console.aws.amazon.com/ec2/v2/home?region=' + \
             self.cfg["region"] + '#Commands:CommandId=' + \
             str(CommandId) + ';sort=CommandId'
-  
+
+
+    def delete_s3_output(self, key, s3_output):
+        logger.debug("deleting s3 : {}".format(key))
+        s3 = self.get_client("s3")
+        s3.delete_object(
+            Bucket=s3_output,
+            Key=key
+        )
+
+    def get_s3_output(self, cmd, s3_output):
+        s3 = self.get_client("s3")
+
+        # Create a paginator to pull 1000 objects at a time
+        paginator = s3.get_paginator('list_objects')
+        operation_parameters = {'Bucket': s3_output,
+                                'Prefix': '{}/'.format(cmd['CommandId'])}
+        pageresponse = paginator.paginate(**operation_parameters)
+        logger.info("List s3 output")
+        logger.debug(operation_parameters)
+        # PageResponse Holds 1000 objects at a time and will continue to repeat in chunks of 1000.
+        for pageobject in pageresponse:
+            for obj in pageobject["Contents"]:
+
+                if obj["Key"].endswith("stdout"):
+                     status = "Success"
+                elif obj["Key"].endswith("stderr"):
+                    status = "Error"
+                else:
+                    logger.warn("Unknown s3 obejct: {}".format(obj["Key"]))
+                    continue
+
+                output = obj["Key"].split("/")
+                # GET s3 output
+                objout = s3.get_object(Bucket=s3_output, Key=obj["Key"])
+
+
+                return status, output[1] , obj["Key"], objout['Body'].read().decode('utf-8')

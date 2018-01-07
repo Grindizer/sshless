@@ -7,7 +7,7 @@ SSHLess with AWS SSM
 
 .. image:: https://badge.fury.io/py/sshless.png
     :target: https://badge.fury.io/py/sshless
-    
+
 Config
 ------
 
@@ -23,20 +23,20 @@ Command
 
 Instance ID Filter::
 
-  $ export SHHLESS_ID_FILTER=i-0da73e7c56e628889,i-0b83e0b9f8f900500
+  $ export SSHLESS_ID_FILTER=i-0da73e7c56e628889,i-0b83e0b9f8f900500
   $ sshless cmd "uname -a"
 
   $ sshless cmd  -i i-0da73e7c56e628889,i-0b83e0b9f8f900500 "uname -a"
 
 Tag Name Filter::
 
-  $ export SHHLESS_NAME_FILTER=web-001
+  $ export SSHLESS_NAME_FILTER=web-001
   $ sshless cmd "uname -a"
   $ sshless cmd  --name web-001 "uname -a"
 
 Advanced Tag filter::
 
-  $ export SHHLESS_FILTER=tag:Environment=DEV
+  $ export SSHLESS_FILTER=tag:Environment=DEV
   $ sshless cmd "uname -a"
   $ sshless cmd  --filter tag:Environment=DEV "uname -a"
 
@@ -48,6 +48,13 @@ List of all SSM instances Online::
 
   $ sshless list
   $ sshless list --show-tags
+
+
+Execute command and save output to S3::
+
+  $ sshless cmd  --name web-001 "uname -a" --s3-output=[your-s3-bucket-ssm-output]
+  $ sshless cmd  --name web-001 "uname -a" --s3-output=[your-s3-bucket-ssm-output] --preserve-s3-output
+
 
 
 
