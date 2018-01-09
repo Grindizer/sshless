@@ -2,7 +2,7 @@
 SSHLess with AWS SSM
 ====================
 
-.. image:: https://img.shields.io/circleci/project/github/giuliocalzolari/sshless.svg
+.. image:: https://circleci.com/gh/giuliocalzolari/sshless.png?style=shield
     :target: https://circleci.com/gh/giuliocalzolari/sshless/tree/master
 
 .. image:: https://badge.fury.io/py/sshless.svg
