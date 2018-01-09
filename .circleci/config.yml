@@ -44,3 +44,8 @@ jobs:
       - store_artifacts:
           path: test-reports
           destination: test-reports
+
+
+deployment:
+  release:
+    tag: /v[0-9]+(\.[0-9]+)*/          
