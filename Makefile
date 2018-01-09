@@ -29,7 +29,6 @@ dist: clean
 
 pip: dist
 	twine upload dist/*
-	clean
 
 tag_github_release:
 	git tag `python setup.py --version`
