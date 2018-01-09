@@ -9,7 +9,7 @@ with open("README.rst") as readme_file:
 
 
 with open("VERSION") as version_file:
-    version = version_file.read()
+    version = version_file.read().strip()
 
 with open("requirements.txt") as requirements_file:
     requirements = [
@@ -46,7 +46,7 @@ setup(
     zip_safe=False,
     keywords="sshless",
     classifiers=[
-        "Development Status :: 5 - Production/Stable",
+        "Development Status :: 5 - Testing",
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",

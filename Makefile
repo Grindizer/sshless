@@ -1,11 +1,20 @@
-.PHONY: clean-pyc clean-build clean
+SHELL := /bin/bash
+
 
 clean: clean-build clean-pyc
 
+version:
+	python setup.py --version
+
+py_install:
+	python setup.py install
+
 clean-build:
-	rm -fr build/
-	rm -fr dist/
-	rm -fr .eggs/
+	rm -rf build/
+	rm -rf dist/
+	rm -rf .eggs/
+	rm -rf .cache/
+	rm -rf '*.egg-info/'
 	find . -name '*.egg-info' -exec rm -fr {} +
 	find . -name '*.egg' -exec rm -f {} +
 
@@ -20,21 +29,19 @@ lint:
 
 dist: clean
 	python setup.py sdist
-	ls -l dist
 
 pip: dist
 	twine upload dist/*
+	clean
+
+tag_github_release:
+	git tag `python setup.py --version`
+	git push origin `python setup.py --version`
+
+
+local: clean-build \
+	py_install
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/
-	rm -rf sshless.egg-info/	
-
-install: clean
-	python setup.py install
-
-local: clean
-	python setup.py install
-	rm -fr build/
-	rm -fr dist/
-	rm -fr .eggs/
-	rm -rf sshless.egg-info/
+	rm -rf '*.egg-info/'
