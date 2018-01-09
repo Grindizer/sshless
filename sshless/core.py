@@ -129,6 +129,11 @@ class SSHLess(object):
         logger.debug(operation_parameters)
         # PageResponse Holds 1000 objects at a time and will continue to repeat in chunks of 1000.
         for pageobject in pageresponse:
+            if len(pageobject["Contents"]) > 1:
+                logger.warn("more than one file found")
+                logger.info(operation_parameters)
+                logger.debug(pageobject["Contents"])
+
             for obj in pageobject["Contents"]:
 
                 if obj["Key"].endswith("stdout"):
