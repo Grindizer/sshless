@@ -46,7 +46,7 @@ setup(
     zip_safe=False,
     keywords="sshless",
     classifiers=[
-        "Development Status :: 5 - Testing",
+        "Development Status :: 4 - Beta",
         "Intended Audience :: Developers",
         "Natural Language :: English",
         "Environment :: Console",
