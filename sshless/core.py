@@ -6,7 +6,6 @@ import base64
 import boto3
 import botocore
 
-
 logger = logging.getLogger("sshless")
 
 
@@ -26,7 +25,6 @@ class SSHLess(object):
             args (object): CFG
         """
         self.cfg = cfg
-        self.ssm_max_results = 50
         self.credentials = {}
         try:
             self.ssm = self.get_client("ssm")
@@ -61,45 +59,54 @@ class SSHLess(object):
             aws_secret_access_key=self.credentials["SecretAccessKey"],
             aws_session_token=self.credentials["SessionToken"])
 
-    def list_commands(self, CommandId=None, InstanceId=None):
+    def send_command(self, params):
+        """send_command
+        ssm send_command
+        http://boto3.readthedocs.io/en/latest/reference/services/ssm.html#SSM.Client.send_command
+
+        Args:
+            params (object): SSM send_command object
+        """
+        try:
+            return self.ssm.send_command(**params)
+        except:
+            logger.critical(sys.exc_info()[1])
+            sys.exit(1)
+
+
+    def list_commands(self, CommandId=None):
+        """list_commands
+        ssm list_commands
+        http://boto3.readthedocs.io/en/latest/reference/services/ssm.html#SSM.Client.list_commands
+
+        Args:
+            CommandId (string): SSM CommandId
+        """
+
         params = {
-            'MaxResults': self.ssm_max_results
+            "CommandId": CommandId
         }
-        if CommandId:
-            params['CommandId'] = CommandId
-        if InstanceId:
-            params['InstanceId'] = InstanceId
 
-        response = self.ssm.list_commands(**params)
-        commands = response['Commands']
-        while True:
-            if 'NextToken' not in response:
-                break
-            params['NextToken'] = response['NextToken']
-            response = self.ssm.list_commands(**params)
-        commands += response['Commands']
-        return commands
+        command = self.ssm.list_commands(**params)['Commands']
+        logger.debug(command)
+        return command
 
+    def list_command_invocations(self, CommandId=None):
+        """list_command_invocations
+        ssm list_command_invocations
+        http://boto3.readthedocs.io/en/latest/reference/services/ssm.html#SSM.Client.list_command_invocations
 
-    def list_command_invocations(self, CommandId=None, InstanceId=None, Details=False):
+        Args:
+            CommandId (string): SSM CommandId
+        """
         params = {
-            'MaxResults': self.ssm_max_results,
-            'Details': Details
+            'Details': True,
+            "CommandId": CommandId
         }
-        if CommandId:
-            params['CommandId'] = CommandId
-        if InstanceId:
-            params['InstanceId'] = InstanceId
+        invocation = self.ssm.list_command_invocations(**params)['CommandInvocations']
+        logger.debug(invocation)
+        return invocation
 
-        response = self.ssm.list_command_invocations(**params)
-        invocations = response['CommandInvocations']
-        while True:
-            if 'NextToken' not in response:
-                break
-            params['NextToken'] = response['NextToken']
-            response = self.ssm.list_command_invocations(**params)
-            invocations += response['CommandInvocations']
-        return invocations
 
     def command_url(self, CommandId):
         if self.cfg["region"] is None:
@@ -107,7 +114,6 @@ class SSHLess(object):
         return 'https://console.aws.amazon.com/ec2/v2/home?region=' + \
             self.cfg["region"] + '#Commands:CommandId=' + \
             str(CommandId) + ';sort=CommandId'
-
 
     def delete_s3_output(self, key, s3_output):
         logger.debug("deleting s3 : {}".format(key))
@@ -117,13 +123,13 @@ class SSHLess(object):
             Key=key
         )
 
-    def get_s3_output(self, cmd, s3_output):
+    def get_s3_output(self, cmd_id, s3_output):
         s3 = self.get_client("s3")
 
         # Create a paginator to pull 1000 objects at a time
         paginator = s3.get_paginator('list_objects')
         operation_parameters = {'Bucket': s3_output,
-                                'Prefix': '{}/'.format(cmd['CommandId'])}
+                                'Prefix': '{}/'.format(cmd_id)}
         pageresponse = paginator.paginate(**operation_parameters)
         logger.info("List s3 output")
         logger.debug(operation_parameters)
@@ -137,7 +143,7 @@ class SSHLess(object):
             for obj in pageobject["Contents"]:
 
                 if obj["Key"].endswith("stdout"):
-                     status = "Success"
+                    status = "Success"
                 elif obj["Key"].endswith("stderr"):
                     status = "Error"
                 else:
@@ -148,5 +154,4 @@ class SSHLess(object):
                 # GET s3 output
                 objout = s3.get_object(Bucket=s3_output, Key=obj["Key"])
 
-
-                return status, output[1] , obj["Key"], objout['Body'].read().decode('utf-8')
+                return status, output[1], obj["Key"], objout['Body'].read().decode('utf-8')

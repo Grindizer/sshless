@@ -6,9 +6,6 @@ clean: clean-build clean-pyc
 version:
 	python setup.py --version
 
-py_install:
-	python setup.py install
-
 clean-build:
 	rm -rf build/
 	rm -rf dist/
@@ -39,8 +36,8 @@ tag_github_release:
 	git push origin `python setup.py --version`
 
 
-local: clean-build \
-	py_install
+local: clean-build
+	python setup.py install
 	rm -fr build/
 	rm -fr dist/
 	rm -fr .eggs/

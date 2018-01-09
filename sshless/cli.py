@@ -134,10 +134,11 @@ def list(ctx, filters, show_tags):
 @click.option('--maxerrors', default=1, help='Max errors allowed (default: 1)')
 @click.option('--comment', default='sshless cli', help='Command invocation comment')
 @click.option('--interval', default=1, help='Check interval (default: 1.0s)')
+@click.option('--timeout', default=600, help='TimeoutSeconds - If this time is reached and the command has not already started executing, it will not execute.')
 @click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
 @click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
-def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, s3_output, preserve_s3_output):
+def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, timeout, s3_output, preserve_s3_output):
     """SSM AWS-RunShellScript emulation SSH interface"""
 
     sshless = SSHLess(ctx.obj)
@@ -152,7 +153,8 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         "DocumentName": "AWS-RunShellScript",
         "Parameters": {"commands": [command]},
         "Comment": comment,
-        "MaxErrors": str(maxerrors)
+        "MaxErrors": str(maxerrors),
+        "TimeoutSeconds": int(timeout)
     }
 
     if instances:
@@ -181,18 +183,14 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
     logger.info("Send command")
     logger.debug(json.dumps(params, indent=2, default=json_serial))
-    try:
-        cmd = sshless.ssm.send_command(**params)['Command']
-    except:
-        click.echo("[{}] {}".format(colored("ERROR", "red"), sys.exc_info()[1] ))
-        sys.exit(1)
+    cmd_id = sshless.send_command(params)['Command']['CommandId']
 
 
     #click.echo('==> ' + ssm.command_url(cmd['CommandId']))
 
     while True:
         time.sleep(interval)
-        out = sshless.list_commands(CommandId=cmd['CommandId'])[0]
+        out = sshless.list_commands(CommandId=cmd_id)[0]
         if out["TargetCount"] == 0:
             click.echo(colored("TargetCount: 0", "red"))
             break
@@ -203,23 +201,20 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         if out['Status'] not in ['Pending', 'InProgress']:
             if out['TargetCount'] == out['CompletedCount']:
 
+                logger.debug(sshless.command_url(cmd_id))
                 logger.debug(json.dumps(out, indent=2, default=json_serial))
 
                 if show_stats:
-                    command_stats(out, target)
+                    print_stats(out, target)
 
-                res = sshless.list_command_invocations(
-                    cmd['CommandId'], Details=True)
+                res = sshless.list_command_invocations(cmd_id)
                 if len(res) != 0:
-
                     if s3_output:
-                        # click.echo(cmd['CommandId'])
-                        status, instanceid, key, body = sshless.get_s3_output(cmd, s3_output)
+                        status, instanceid, key, body = sshless.get_s3_output(cmd_id, s3_output)
                         click.echo("[{}] {}".format(get_status(status), instanceid))
                         click.echo(body)
                         if preserve_s3_output == False:
                             sshless.delete_s3_output(key, s3_output)
-
 
                     else:
                         for i in res:
@@ -230,14 +225,14 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
 
 
-def command_stats(i,target):
+def print_stats(i,target):
 
     output = """[{}]
-CommandId: {}
-Requested: {}
-Command: {}
-{}
-Stats: Targets: {}  Completed: {}  Errors: {}
+ CommandId: {}
+ Requested: {}
+ Command: {}
+ {}
+ Stats: Targets: {}  Completed: {}  Errors: {}
     """.format(get_status(i['Status']),
     i['CommandId'],
     i['RequestedDateTime'].replace(microsecond=0),
