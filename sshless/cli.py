@@ -74,7 +74,7 @@ def cli(ctx, iam, region, verbose):
 @click.option('-t', '--show-tags', is_flag=True, default=False)
 @click.pass_context
 def list(ctx, filters, show_tags):
-    """ssm.describe_instance_information """
+    """SSM Managed instances Online"""
 
     sshless = SSHLess(ctx.obj)
     fl = []
@@ -128,13 +128,14 @@ def list(ctx, filters, show_tags):
 @click.option('--maxerrors', default=1, help='Max errors allowed (default: 1)')
 @click.option('--comment', default='sshless cli', help='Command invocation comment')
 @click.option('--interval', default=1, help='Check interval (default: 1.0s)')
+@click.option('--working-directory', default=None, help='workingDirectory')
 @click.option('--timeout', default=600, help='TimeoutSeconds - If this time is reached and the command has not already started executing, it will not execute.')
 @click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
 @click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
 @catch_exceptions
-def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, timeout, s3_output, preserve_s3_output):
-    """SSM AWS-RunShellScript emulation SSH interface"""
+def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, working_directory, timeout, s3_output, preserve_s3_output):
+    """SSM AWS-RunShellScript commands"""
 
     sshless = SSHLess(ctx.obj)
     if name and filters:
@@ -172,6 +173,9 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
     if maxconcurrency:
         params["MaxConcurrency"] = str(maxconcurrency)
+
+    if working_directory:
+        params["Parameters"]["workingDirectory"] = [str(working_directory)]
 
     if s3_output:
         params["OutputS3BucketName"] = s3_output
