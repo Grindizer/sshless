@@ -5,6 +5,7 @@ import logging
 import base64
 import boto3
 import botocore
+from util import get_status, format_json
 
 logger = logging.getLogger("sshless")
 
@@ -67,6 +68,8 @@ class SSHLess(object):
         Args:
             params (object): SSM send_command object
         """
+        logger.info("Send command")
+        logger.debug(format_json(params))
         try:
             return self.ssm.send_command(**params)
         except:

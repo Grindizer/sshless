@@ -3,14 +3,14 @@
 import sys
 import logging
 import time
-import json
-from datetime import date, datetime
 import os
 from functools import wraps
 import click
 import boto3
 from core import SSHLess
+from util import get_status, format_json
 from termcolor import colored
+
 
 
 # Setup simple logging for INFO
@@ -24,12 +24,6 @@ logger.setLevel(logging.WARN)
 
 
 
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
-
-    if isinstance(obj, (datetime, date)):
-        return obj.isoformat()
-    raise TypeError ("Type %s not serializable" % type(obj))
 
 def catch_exceptions(func):
     @wraps(func)
@@ -122,7 +116,7 @@ def list(ctx, filters, show_tags):
     else:
         full_info = response["InstanceInformationList"]
 
-    click.echo(json.dumps(full_info, indent=2, default=json_serial))
+    click.echo(format_json(full_info))
 
 @cli.command()
 @click.argument('command')
@@ -138,17 +132,16 @@ def list(ctx, filters, show_tags):
 @click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
 @click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
+@catch_exceptions
 def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, timeout, s3_output, preserve_s3_output):
     """SSM AWS-RunShellScript emulation SSH interface"""
 
     sshless = SSHLess(ctx.obj)
-
     if name and filters:
         click.echo("[{}] name and filters are mutually exclusive".format(colored("Error", "red")))
         sys.exit(1)
 
     fl = []
-
     params = {
         "DocumentName": "AWS-RunShellScript",
         "Parameters": {"commands": [command]},
@@ -164,6 +157,9 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         target = "InstanceIds: {}".format(instances)
 
     elif name:
+        if filters:
+            click.echo("[{}] name filter override advanced filter".format(colored("Warn", "yellow")))
+
         fl.append({'Key': 'tag:Name','Values': [name] })
         params["Targets"] = fl
         target = "Tag Name Filter: tag:Name={}".format(name)
@@ -174,19 +170,13 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         params["Targets"] = fl
         target = "Tag Filter: {}".format(filters)
 
-
     if maxconcurrency:
         params["MaxConcurrency"] = str(maxconcurrency)
 
     if s3_output:
         params["OutputS3BucketName"] = s3_output
 
-    logger.info("Send command")
-    logger.debug(json.dumps(params, indent=2, default=json_serial))
     cmd_id = sshless.send_command(params)['Command']['CommandId']
-
-
-    #click.echo('==> ' + ssm.command_url(cmd['CommandId']))
 
     while True:
         time.sleep(interval)
@@ -194,15 +184,12 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         if out["TargetCount"] == 0:
             click.echo(colored("TargetCount: 0", "red"))
             break
-        # Print final results when done
-        # click.echo(json.dumps(out, indent=2, default=json_serial))
-
 
         if out['Status'] not in ['Pending', 'InProgress']:
             if out['TargetCount'] == out['CompletedCount']:
 
                 logger.debug(sshless.command_url(cmd_id))
-                logger.debug(json.dumps(out, indent=2, default=json_serial))
+                logger.debug(format_json(out))
 
                 if show_stats:
                     print_stats(out, target)
@@ -246,11 +233,7 @@ def print_stats(i,target):
 
 
 
-def get_status(status):
-   if status == "Success":
-       return colored(status, "green")
-   else:
-       return colored(status, "red")
+
 
 
 
