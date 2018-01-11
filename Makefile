@@ -31,8 +31,8 @@ pip: dist
 	twine upload dist/*
 
 tag_github_release:
-	git tag "v$(cat VERSION)"
-	git push origin "v$(cat VERSION)"
+	git tag v`python setup.py --version`
+	git push origin v`python setup.py --version`
 
 
 local: clean-build
