@@ -27,11 +27,8 @@ class SSHLess(object):
         """
         self.cfg = cfg
         self.credentials = {}
-        try:
-            self.ssm = self.get_client("ssm")
-        except botocore.exceptions.ClientError as e:
-            logger.critical(e)
-            exit(1)
+        self.ssm = self.get_client("ssm")
+
 
     def get_client(self, service):
         """boto3.client helper
@@ -70,11 +67,8 @@ class SSHLess(object):
         """
         logger.info("Send command")
         logger.debug(format_json(params))
-        try:
-            return self.ssm.send_command(**params)
-        except:
-            logger.critical(sys.exc_info()[1])
-            sys.exit(1)
+        return self.ssm.send_command(**params)
+
 
 
     def list_commands(self, CommandId=None):

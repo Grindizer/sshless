@@ -18,6 +18,23 @@ To execute an assume role action::
   $ export AWS_SSM_ROLE=arn:aws:iam::111111111:role/admin
 
 
+Cache Filters
+-------------
+
+sshless use a local file to save the Target filters in order to simplify and avoid to have long command line history::
+
+  $ sshless cmd --name web-001 "uname -a"
+  $ cat ~/.sshless/filters     # local file with your filter
+    {
+    "Targets": [{
+        "Key": "tag:Name",
+        "Values": ["web-001"]
+      }]
+    }
+  $ sshless cmd "uname -a"   # valid command to the same target
+
+
+
 Command
 -------
 

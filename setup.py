@@ -17,9 +17,7 @@ with open("requirements.txt") as requirements_file:
         if requirement != ""
     ]
 
-setup_requirements = [
-    "pytest-runner==2.6.2"
-]
+setup_requirements = []
 
 setup(
     name="sshless",

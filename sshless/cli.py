@@ -8,7 +8,7 @@ from functools import wraps
 import click
 import boto3
 from core import SSHLess
-from util import get_status, format_json
+from util import *
 from termcolor import colored
 
 
@@ -35,7 +35,11 @@ def catch_exceptions(func):
         try:
             return func(*args, **kwargs)
         except:
-            logger.error(sys.exc_info()[1])
+            # logger.error(sys.exc_info()[1])
+            click.echo("[{}][{}] {}".format(time.strftime("%Y-%m-%d %H:%M:%S"),
+                colored("ERROR", "red"),
+                sys.exc_info()[1]
+            ))
             sys.exit(1)
 
     return decorated
@@ -73,6 +77,7 @@ def cli(ctx, iam, region, verbose):
 @click.option('-f', '--filters', default="PingStatus=Online", help='advanced Filter default: PingStatus=Online')
 @click.option('-t', '--show-tags', is_flag=True, default=False)
 @click.pass_context
+@catch_exceptions
 def list(ctx, filters, show_tags):
     """SSM Managed instances Online"""
 
@@ -82,14 +87,9 @@ def list(ctx, filters, show_tags):
         key, val = ff.split("=")
         fl.append({"Key": key, "Values": [val] })
 
-    try:
-        response = sshless.ssm.describe_instance_information(
-            Filters=fl
-        )
-    except:
-        click.echo("[{}] {}".format(colored("ERROR", "red"), sys.exc_info()[1] ))
-        sys.exit(1)
-
+    response = sshless.ssm.describe_instance_information(
+        Filters=fl
+    )
 
     if show_tags:
         ids = []
@@ -116,6 +116,7 @@ def list(ctx, filters, show_tags):
     else:
         full_info = response["InstanceInformationList"]
 
+    logger.info("Total instances: {}".format(len(response["InstanceInformationList"])))
     click.echo(format_json(full_info))
 
 @cli.command()
@@ -156,6 +157,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
             click.echo("[{}] instances filters override tag or advanced filter".format(colored("Warn", "yellow")))
         params["InstanceIds"] = instances.split(",")
         target = "InstanceIds: {}".format(instances)
+        save_filter({"InstanceIds": params["InstanceIds"] })
 
     elif name:
         if filters:
@@ -163,6 +165,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
         fl.append({'Key': 'tag:Name','Values': [name] })
         params["Targets"] = fl
+        save_filter({"Targets": params["Targets"] })
         target = "Tag Name Filter: tag:Name={}".format(name)
     elif filters:
         for ff in filters.split(","):
@@ -170,6 +173,16 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
             fl.append({"Key": key, "Values": [val] })
         params["Targets"] = fl
         target = "Tag Filter: {}".format(filters)
+        save_filter({"Targets": params["Targets"] })
+
+    if all(v is None for v in [instances, name, filters]):
+        cache_filter = read_filter()
+        if cache_filter:
+            logger.info("read filter from Cache: {}".format(cache_filter))
+            params = dict(params.items() + cache_filter.items())
+        else:
+            raise ValueError("No valid Target - please check the online help")
+
 
     if maxconcurrency:
         params["MaxConcurrency"] = str(maxconcurrency)
@@ -187,7 +200,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         out = sshless.list_commands(CommandId=cmd_id)[0]
         if out["TargetCount"] == 0:
             click.echo(colored("TargetCount: 0", "red"))
-            break
+            sys.exit(1)
 
         if out['Status'] not in ['Pending', 'InProgress']:
             if out['TargetCount'] == out['CompletedCount']:
@@ -196,15 +209,17 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
                 logger.debug(format_json(out))
 
                 if show_stats:
-                    print_stats(out, target)
+                    click.echo(get_report(out, target))
 
                 res = sshless.list_command_invocations(cmd_id)
                 if len(res) != 0:
                     if s3_output:
+                        # lookup for the stdout file inside s3 bucket
                         status, instanceid, key, body = sshless.get_s3_output(cmd_id, s3_output)
                         click.echo("[{}] {}".format(get_status(status), instanceid))
                         click.echo(body)
                         if preserve_s3_output == False:
+                            # delete stdout file inside s3 bucket
                             sshless.delete_s3_output(key, s3_output)
 
                     else:
@@ -213,31 +228,6 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
                             for cp in i['CommandPlugins']:
                                 click.echo(cp['Output'])
                 break
-
-
-
-def print_stats(i,target):
-
-    output = """[{}]
- CommandId: {}
- Requested: {}
- Command: {}
- {}
- Stats: Targets: {}  Completed: {}  Errors: {}
-    """.format(get_status(i['Status']),
-    i['CommandId'],
-    i['RequestedDateTime'].replace(microsecond=0),
-    i['Parameters']["commands"][0],
-    target,
-    i['TargetCount'],
-    i['CompletedCount'],
-    i['ErrorCount']
-    )
-    click.echo(output)
-
-
-
-
 
 
 
