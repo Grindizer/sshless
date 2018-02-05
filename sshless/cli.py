@@ -68,6 +68,7 @@ def cli(ctx, iam, region, verbose):
     elif ctx.obj["verbosity"] > 1:
         logger.setLevel(logging.DEBUG)
         logger.debug("log level is set to DEBUG")
+        logger.debug(ctx.obj)
     pass
 
 
@@ -175,13 +176,17 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
         target = "Tag Filter: {}".format(filters)
         save_filter({"Targets": params["Targets"] })
 
+
     if all(v is None for v in [instances, name, filters]):
         cache_filter = read_filter()
+        target = "Read from cache: {}".format(cache_filter)
         if cache_filter:
             logger.info("read filter from Cache: {}".format(cache_filter))
             params = dict(params.items() + cache_filter.items())
         else:
             raise ValueError("No valid Target - please check the online help")
+
+    logger.debug("target: {}".format(target))
 
 
     if maxconcurrency:
@@ -193,17 +198,19 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
     if s3_output:
         params["OutputS3BucketName"] = s3_output
 
-    cmd_id = sshless.send_command(params)['Command']['CommandId']
+    cmd_result = sshless.send_command(params)
+    cmd_id = cmd_result['Command']['CommandId']
 
     while True:
-        time.sleep(interval)
+        time.sleep(0.2)
         out = sshless.list_commands(CommandId=cmd_id)[0]
-        if out["TargetCount"] == 0:
-            click.echo(colored("TargetCount: 0", "red"))
-            sys.exit(1)
 
         if out['Status'] not in ['Pending', 'InProgress']:
             if out['TargetCount'] == out['CompletedCount']:
+
+                if out["TargetCount"] == 0:
+                    click.echo(colored("TargetCount: 0", "red"))
+                    sys.exit(1)
 
                 logger.debug(sshless.command_url(cmd_id))
                 logger.debug(format_json(out))
@@ -229,7 +236,7 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
                                 click.echo(cp['Output'])
                 break
 
-
+        time.sleep(interval)
 
 if __name__ == '__main__':
     cli()

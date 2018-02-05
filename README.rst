@@ -13,7 +13,8 @@ Config
 
 this script is designed to run across multiple accounts and across multiple regions you can switch between regions/accounts using some OS vars
 
-To execute an assume role action::
+To execute an assume role action
+::
 
   $ export AWS_SSM_ROLE=arn:aws:iam::111111111:role/admin
 
@@ -21,9 +22,12 @@ To execute an assume role action::
 Cache Filters
 -------------
 
-sshless use a local file to save the Target filters in order to simplify and avoid to have long command line history::
+sshless use a local file to save the Target filters in order to simplify and avoid to have long command line history
+
+Example::
 
   $ sshless cmd --name web-001 "uname -a"
+  ..... output omitted ....
   $ cat ~/.sshless/filters     # local file with your filter
     {
     "Targets": [{
@@ -32,7 +36,7 @@ sshless use a local file to save the Target filters in order to simplify and avo
       }]
     }
   $ sshless cmd "uname -a"   # valid command to the same target
-
+  ..... output omitted ....
 
 
 Command
@@ -55,7 +59,7 @@ Advanced Tag filter::
 
   $ export SSHLESS_FILTER=tag:Environment=DEV
   $ sshless cmd "uname -a"
-  $ sshless cmd  --filter tag:Environment=DEV "uname -a"
+  $ sshless cmd  --filters tag:Environment=DEV "uname -a"
 
 SSM Parameter store integration::
 
