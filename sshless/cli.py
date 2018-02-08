@@ -76,7 +76,7 @@ def cli(ctx, iam, region, verbose):
 
 @cli.command()
 @click.option('-f', '--filters', default="PingStatus=Online", help='advanced Filter default: PingStatus=Online')
-@click.option('-t', '--show-tags', is_flag=True, default=False)
+# @click.option('-t', '--show-tags', is_flag=True, default=False)
 @click.pass_context
 @catch_exceptions
 def list(ctx, filters, show_tags):
@@ -91,34 +91,35 @@ def list(ctx, filters, show_tags):
     response = sshless.ssm.describe_instance_information(
         Filters=fl
     )
-
-    if show_tags:
-        ids = []
-        infos = {}
-        # ADD EC2 tags
-        for i in response["InstanceInformationList"]:
-            ids.append(i["InstanceId"])
-
-        ec2 = sshless.get_client("ec2")
-        tags = ec2.describe_tags(
-            Filters=[{'Name': 'resource-id',
-                    'Values': ids}]
-        )["Tags"]
-        for tag in tags:
-            if tag["ResourceId"] not in infos.keys():
-                infos[tag["ResourceId"]] = []
-            infos[tag["ResourceId"]].append({tag.get("Key", ""): tag.get("Value", "")})
-
-        full_info = []
-        for inst in response["InstanceInformationList"]:
-            inst["Tags"] = infos.get(inst["InstanceId"], {})
-            full_info.append(inst)
-
-    else:
-        full_info = response["InstanceInformationList"]
+    # TODO
+    # if show_tags:
+    #     ids = []
+    #     infos = {}
+    #     # ADD EC2 tags
+    #     for i in response["InstanceInformationList"]:
+    #         if i["InstanceId"].startswith("i-"):
+    #             ids.append(i["InstanceId"])
+    #
+    #     ec2 = sshless.get_client("ec2")
+    #     tags = ec2.describe_tags(
+    #         Filters=[{'Name': 'resource-id',
+    #                 'Values': ids}]
+    #     )["Tags"]
+    #     for tag in tags:
+    #         if tag["ResourceId"] not in infos.keys():
+    #             infos[tag["ResourceId"]] = []
+    #         infos[tag["ResourceId"]].append({tag.get("Key", ""): tag.get("Value", "")})
+    #
+    #     full_info = []
+    #     for inst in response["InstanceInformationList"]:
+    #         inst["Tags"] = infos.get(inst["InstanceId"], {})
+    #         full_info.append(inst)
+    #
+    # else:
+    #     full_info = response["InstanceInformationList"]
 
     logger.info("Total instances: {}".format(len(response["InstanceInformationList"])))
-    click.echo(format_json(full_info))
+    click.echo(format_json(response["InstanceInformationList"]))
 
 @cli.command()
 @click.argument('command')
