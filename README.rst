@@ -26,13 +26,13 @@ sshless use a local file to save the Target filters in order to simplify and avo
 
 Example::
 
-  $ sshless cmd --name web-001 "uname -a"
+  $ sshless cmd --name web-1 "uname -a"
   ..... output omitted ....
   $ cat ~/.sshless/filters     # local file with your filter
     {
     "Targets": [{
         "Key": "tag:Name",
-        "Values": ["web-001"]
+        "Values": ["web-1"]
       }]
     }
   $ sshless cmd "uname -a"   # valid command to the same target
@@ -51,19 +51,19 @@ Instance ID Filter::
 
 Tag Name Filter::
 
-  $ export SSHLESS_NAME_FILTER=web-001
+  $ export SSHLESS_NAME_FILTER=web-1
   $ sshless cmd "uname -a"
-  $ sshless cmd  --name web-001 "uname -a"
+  $ sshless cmd  --name web-1 "uname -a"
 
 Advanced Tag filter::
 
-  $ export SSHLESS_FILTER=tag:Environment=DEV
+  $ export SSHLESS_FILTER=tag:Role=web
   $ sshless cmd "uname -a"
-  $ sshless cmd  --filters tag:Environment=DEV "uname -a"
+  $ sshless cmd  --filters tag:Role=web "uname -a"
 
 SSM Parameter store integration::
 
-  $ sshless cmd  --name web-001 "echo {{ssm:db.host}}"
+  $ sshless cmd  --name web-1 "echo {{ssm:example.parameter}}"
 
 List of all SSM instances Online::
 
@@ -73,8 +73,8 @@ List of all SSM instances Online::
 
 Execute command and save output to S3::
 
-  $ sshless cmd  --name web-001 "uname -a" --s3-output=[your-s3-bucket-ssm-output]
-  $ sshless cmd  --name web-001 "uname -a" --s3-output=[your-s3-bucket-ssm-output] --preserve-s3-output
+  $ sshless cmd  --name web-1 "uname -a" --s3-output=[your-s3-bucket-ssm-output]
+  $ sshless cmd  --name web-1 "uname -a" --s3-output=[your-s3-bucket-ssm-output] --preserve-s3-output
 
 
 

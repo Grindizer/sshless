@@ -79,7 +79,7 @@ def cli(ctx, iam, region, verbose):
 # @click.option('-t', '--show-tags', is_flag=True, default=False)
 @click.pass_context
 @catch_exceptions
-def list(ctx, filters, show_tags):
+def list(ctx, filters):
     """SSM Managed instances Online"""
 
     sshless = SSHLess(ctx.obj)
