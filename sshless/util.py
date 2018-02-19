@@ -1,7 +1,9 @@
+#!/usr/bin/env python
+
 import json
 import os
 from termcolor import colored
-from datetime import date, datetime
+
 
 def get_status(status):
    if status == "Success":
@@ -9,20 +11,35 @@ def get_status(status):
    else:
        return colored(status, "red")
 
-def json_serial(obj):
-    """JSON serializer for objects not serializable by default json code"""
 
-    if isinstance(obj, (datetime, date)):
+def json_serial(obj):
+    """JSON serializer for objects not serializable by default json code
+    >>> from datetime import date, datetime
+    >>> json_serial(date(2018, 12, 12))
+    '2018-12-12'
+    >>> json_serial(datetime(2018, 12, 12, 12, 12))
+    '2018-12-12T12:12:00'
+    >>> json_serial("")
+    Traceback (most recent call last):
+        ...
+    TypeError: Type <class 'str'> not serializable
+    >>> # Just to show that this implementation can take any object with a isoformat method.
+    >>> DatetimeLike = type('DatetimeLike', (object,), {'isoformat': lambda s: 'async date time formatted strings'})
+    >>> obj = DatetimeLike()
+    >>> json_serial(obj)
+    'async date time formatted strings'
+    """
+    try:
         return obj.isoformat()
-    raise TypeError ("Type %s not serializable" % type(obj))
+    except AttributeError:
+        raise TypeError("Type %s not serializable" % type(obj))
 
 
 def format_json(s):
     return json.dumps(s, indent=2, default=json_serial)
 
 
-def get_report(i,target):
-
+def get_report(i, target):
     return """[{}]
  CommandId: {}
  Requested: {}

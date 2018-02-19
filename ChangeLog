@@ -1,0 +1,39 @@
+CHANGES
+=======
+
+* bump version 0.1.2
+* add s3\_key support
+* bump version v0.1.1
+* update test plan
+* create terrafrom script for testing
+* remove tag lookup
+* fix typo
+* bump version 0.1.0
+* add terraform testing script
+* add debug messages
+* bump version 0.0.9
+* add cached filter
+* bump version 0.0.8
+* add working\_directory
+* bump 0.0.7
+* update manifest
+* bump version 0.0.6
+* add LICENSE
+* update badge
+* demo commit
+* update .circleci/config.yml
+* demo commit
+* trigger circleci only on tag
+* update Makefile
+* update Development Status
+* bump version v0.0.5
+* general improvement
+* update make file
+* use svg badge
+* add some documentations
+* add s3 output
+* add github badge
+* general update
+* update
+* add circleci
+* first commit

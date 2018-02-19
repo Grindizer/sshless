@@ -1,5 +1,4 @@
-
-#!/usr/bin/env python
+# !/usr/bin/env python
 
 import sys
 import logging
@@ -8,8 +7,8 @@ import os
 from functools import wraps
 import click
 import boto3
-from core import SSHLess
-from util import *
+from .core import SSHLess
+from .util import *
 from termcolor import colored
 
 
@@ -218,5 +217,3 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
         time.sleep(interval)
 
-if __name__ == '__main__':
-    cli()

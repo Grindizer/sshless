@@ -5,7 +5,7 @@ import logging
 import base64
 import boto3
 import botocore
-from util import get_status, format_json
+from . util import get_status, format_json
 
 logger = logging.getLogger("sshless")
 
