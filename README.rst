@@ -86,9 +86,13 @@ Execute command and save output to S3::
   $ sshless cmd  --name web-1 "uname -a" --s3-output=[your-s3-bucket-ssm-output] --preserve-s3-output
 
 
+============
+SSHLess DEMO
+============
 
+Demo example is available `HERE <test/README.rst>`_
 
 License
--------------
+-------
 
 sshless is licensed under the `MIT <LICENSE>`_.

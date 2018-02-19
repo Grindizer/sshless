@@ -19,7 +19,7 @@ elif [[ $1 == "delete" ]] || [[ $1 == "destroy" ]]; then
 
 elif [[ $1 == "web" ]] || [[ $1 == "app" ]]; then
   set -x
-  sshless cmd -f tag:Role=$1 hostname
+  sshless cmd -f tag:Role=$1 "wget -q -O - http://169.254.169.254/latest/dynamic/instance-identity/document"
 
 elif [[ $1 == "web-role" ]]; then
 
