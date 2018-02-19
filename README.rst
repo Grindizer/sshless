@@ -8,6 +8,15 @@ SSHLess with AWS SSM
 .. image:: https://badge.fury.io/py/sshless.svg
     :target: https://badge.fury.io/py/sshless
 
+
+Overview
+--------
+
+At re:invent 2017, many features were introduced such as `SSM PrivateLink <https://aws.amazon.com/blogs/aws/new-aws-privatelink-endpoints-kinesis-ec2-systems-manager-and-elb-apis-in-your-vpc/>`_, `PCI compliance <https://aws.amazon.com/blogs/security/aws-adds-16-more-services-to-its-pci-dss-compliance-program/>`_.
+I decided to investigate on SSM and `SendCommand <https://docs.aws.amazon.com/systems-manager/latest/APIReference/API_SendCommand.html>`_ to understand its capabilities in a real world.
+SSHLess is a python implementation of SSM SendCommand to simulate the usage of a normal CLI
+
+
 Config
 ------
 
