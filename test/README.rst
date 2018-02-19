@@ -6,6 +6,7 @@ Overview
 --------
 
 The demo is required to use Terraform to bootstrap the full scenario composed by:
+
 - 2 EC2 instances with the tag Role=web
 - 2 EC2 instances with the tag Role=app
 - 2 EC2 instances with the tag Role=legacy to simulate two OnPrem Virtual Machine
