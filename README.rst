@@ -77,7 +77,6 @@ SSM Parameter store integration::
 List of all SSM instances Online::
 
   $ sshless list
-  $ sshless list --show-tags
 
 
 Execute command and save output to S3::
