@@ -5,7 +5,7 @@ import logging
 import base64
 import boto3
 import botocore
-from util import get_status, format_json
+from sshless.util import get_status, format_json
 
 logger = logging.getLogger("sshless")
 
@@ -124,7 +124,7 @@ class SSHLess(object):
             Key=key
         )
 
-    def get_s3_output(self, cmd_id, s3_output, s3_key = None, s3_region = None):
+    def get_s3_output(self, cmd_id, s3_output, s3_key = "", s3_region = None):
         if s3_region:
             s3 = self.get_client("s3", region_name=s3_region)
         else:

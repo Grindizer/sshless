@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from __future__ import absolute_import
 import sys
 import logging
@@ -7,8 +7,8 @@ import os
 from functools import wraps
 import click
 import boto3
-from core import SSHLess
-from util import *
+from sshless.core import SSHLess
+from sshless.util import *
 from termcolor import colored
 
 
@@ -76,7 +76,6 @@ def cli(ctx, iam, region, verbose):
 
 @cli.command()
 @click.option('-f', '--filters', default="PingStatus=Online", help='advanced Filter default: PingStatus=Online')
-# @click.option('-t', '--show-tags', is_flag=True, default=False)
 @click.pass_context
 @catch_exceptions
 def list(ctx, filters):
@@ -91,33 +90,6 @@ def list(ctx, filters):
     response = sshless.ssm.describe_instance_information(
         Filters=fl
     )
-    # TODO
-    # if show_tags:
-    #     ids = []
-    #     infos = {}
-    #     # ADD EC2 tags
-    #     for i in response["InstanceInformationList"]:
-    #         if i["InstanceId"].startswith("i-"):
-    #             ids.append(i["InstanceId"])
-    #
-    #     ec2 = sshless.get_client("ec2")
-    #     tags = ec2.describe_tags(
-    #         Filters=[{'Name': 'resource-id',
-    #                 'Values': ids}]
-    #     )["Tags"]
-    #     for tag in tags:
-    #         if tag["ResourceId"] not in infos.keys():
-    #             infos[tag["ResourceId"]] = []
-    #         infos[tag["ResourceId"]].append({tag.get("Key", ""): tag.get("Value", "")})
-    #
-    #     full_info = []
-    #     for inst in response["InstanceInformationList"]:
-    #         inst["Tags"] = infos.get(inst["InstanceId"], {})
-    #         full_info.append(inst)
-    #
-    # else:
-    #     full_info = response["InstanceInformationList"]
-
     logger.info("Total instances: {}".format(len(response["InstanceInformationList"])))
     click.echo(format_json(response["InstanceInformationList"]))
 
@@ -134,7 +106,7 @@ def list(ctx, filters):
 @click.option('--working-directory', default=None, help='workingDirectory')
 @click.option('--timeout', default=600, help='TimeoutSeconds - If this time is reached and the command has not already started executing, it will not execute.')
 @click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
-@click.option('--s3-key', default=os.environ.get("SSHLESS_S3_KEY", None), help='S3 Key (Optional)')
+@click.option('--s3-key', default=os.environ.get("SSHLESS_S3_KEY", ""), help='S3 Key (Optional)')
 @click.option('--s3-region', default=os.environ.get("SSHLESS_S3_REGION", None), help='S3 region (Optional)')
 @click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
