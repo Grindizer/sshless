@@ -1,3 +1,4 @@
+
 #!/usr/bin/env python
 
 import sys
@@ -134,10 +135,12 @@ def list(ctx, filters):
 @click.option('--working-directory', default=None, help='workingDirectory')
 @click.option('--timeout', default=600, help='TimeoutSeconds - If this time is reached and the command has not already started executing, it will not execute.')
 @click.option('--s3-output', default=os.environ.get("SSHLESS_S3_OUTPUT", None), help='S3 output (Optional)')
+@click.option('--s3-key', default=os.environ.get("SSHLESS_S3_KEY", None), help='S3 Key (Optional)')
+@click.option('--s3-region', default=os.environ.get("SSHLESS_S3_REGION", None), help='S3 region (Optional)')
 @click.option('--preserve-s3-output', is_flag=True, default=False, help='Preserve S3 output (Optional)')
 @click.pass_context
 @catch_exceptions
-def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, working_directory, timeout, s3_output, preserve_s3_output):
+def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxerrors,  comment, interval, working_directory, timeout, s3_output, s3_key, s3_region, preserve_s3_output):
     """SSM AWS-RunShellScript commands"""
 
     sshless = SSHLess(ctx.obj)
@@ -198,6 +201,10 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
 
     if s3_output:
         params["OutputS3BucketName"] = s3_output
+    if s3_key:
+        params["OutputS3KeyPrefix"] = s3_key
+    if s3_region:
+        params["OutputS3Region"] = s3_region
 
     cmd_result = sshless.send_command(params)
     cmd_id = cmd_result['Command']['CommandId']
@@ -223,12 +230,12 @@ def cmd(ctx, command, show_stats, name, filters, instances, maxconcurrency, maxe
                 if len(res) != 0:
                     if s3_output:
                         # lookup for the stdout file inside s3 bucket
-                        status, instanceid, key, body = sshless.get_s3_output(cmd_id, s3_output)
+                        status, instanceid, key, body = sshless.get_s3_output(cmd_id, s3_output, s3_key, s3_region)
                         click.echo("[{}] {}".format(get_status(status), instanceid))
                         click.echo(body)
                         if preserve_s3_output == False:
                             # delete stdout file inside s3 bucket
-                            sshless.delete_s3_output(key, s3_output)
+                            sshless.delete_s3_output(key, s3_output, s3_region)
 
                     else:
                         for i in res:

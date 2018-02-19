@@ -112,21 +112,34 @@ class SSHLess(object):
             self.cfg["region"] + '#Commands:CommandId=' + \
             str(CommandId) + ';sort=CommandId'
 
-    def delete_s3_output(self, key, s3_output):
+    def delete_s3_output(self, key, s3_output, s3_region = None):
         logger.debug("deleting s3 : {}".format(key))
-        s3 = self.get_client("s3")
+        if s3_region:
+            s3 = self.get_client("s3", region_name=s3_region)
+        else:
+            s3 = self.get_client("s3")
+
         s3.delete_object(
             Bucket=s3_output,
             Key=key
         )
 
-    def get_s3_output(self, cmd_id, s3_output):
-        s3 = self.get_client("s3")
+    def get_s3_output(self, cmd_id, s3_output, s3_key = None, s3_region = None):
+        if s3_region:
+            s3 = self.get_client("s3", region_name=s3_region)
+        else:
+            s3 = self.get_client("s3")
+
+        if s3_key:
+            if s3_key.endswith("/"):
+                s3_key = s3_key
+            else:
+                s3_key = "{}/".format(s3_key)
 
         # Create a paginator to pull 1000 objects at a time
         paginator = s3.get_paginator('list_objects')
         operation_parameters = {'Bucket': s3_output,
-                                'Prefix': '{}/'.format(cmd_id)}
+                                'Prefix': '{}{}/'.format(s3_key, cmd_id)}
         pageresponse = paginator.paginate(**operation_parameters)
         logger.info("List s3 output")
         logger.debug(operation_parameters)
